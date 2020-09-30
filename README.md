@@ -1,73 +1,38 @@
-# PyBossa Docker container
-Docker container for running PyBossa.
+# Introduction 
+This project contains all files necessary for setting up a Pybossa instance.
 
-# Docker-Compose Quick Start
-Use my [docker-compose file](https://github.com/jvstein/docker-compose-pybossa)
-to set up a quick and dirty PyBossa environment for evaluation or test purposes.
+# Getting Started
+1. Run `cp .env.tmpl .env` and change the contents of `.env` to your needs. Especially set an postgres password.
+2. Install docker and docker-compose, if not already installed: https://docs.docker.com/engine/install/ and https://docs.docker.com/compose/install/. For Ubuntu:
+```
+curl -fsSL htstps://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker your-user
+sudo curl -L "https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+```
+3. [If local development]: Copy over the production database to your local machine:
+    1. Log onto the production machine
+    2. Run `docker exec [postgres docker container name] pg_dump -U pybossa -F t pybossa | gzip >~/backup/pybossa-$(date +%Y-%m-%d).tar.gz`
+    3. Copy the resuling .tar.gz file to your local machine
+    4. Start the local database with `docker-compose up -d postgres`
+    5. Restore the database with `docker exec -i [postgres docker container name] pg_restore -U pybossa -d pybossa < [.tar.gz file path]`
+4. Build and run the composition with `docker-compose up -d`
+5. [If local development]: Modify the compose file: Comment out unneeded party from the compose file: nginx-proxy, nginx-proxy-letsencrypt and, if you copied over the production database, db-init.
+6. Build and run the composition with `docker-compose up -d`
+7. Point your web browser to the machines address. The first registered user will be made admin.
 
-**WARNING: All data will be lost when the container is removed.**
+# Trouble Shooting
 
-# Manual Quick Start
-If you prefer to run things by hand, this should get you going. Modify the POSTGRES_URL variable accordingly.
+## Insecure connection error
 
-0. (One-time) Set up a PostgreSQL database according to the [Pybossa install docs][db] or follow the instructions in the [Run PostgreSQL in Docker](#run-postgresql-in-docker) section.
-0. (One-time) Create the PyBossa tables in your database.
-    ```
-    docker run --rm -it \
-      -e POSTGRES_URL="postgresql://pybossa:supersecretpassword@db/pybossa" \
-      jvstein/pybossa \
-      python cli.py db_create
-    ```
+In this case an error with the nginx proxy might be the source of trouble. For solving it a force-recreate has to be triggered. Docker has not recognized any changes in one of the containers. Hence a recreation of the container and its volume has to be triggered manually by the following command.
 
-0. Start the Redis master.
-    ```
-    docker run -d --name redis-master redis:3.0-alpine
-    ```
+```
+docker-compose up -d --build --force-recreate
+```
 
-0. Start Redis Sentinel.
-    ```
-    docker run -d --name redis-sentinel \
-      --link redis-master \
-      jvstein/redis-sentinel
-    ```
+## 502 HTTP error
 
-0. Start the PyBossa background worker.
-    ```
-    docker run -d --name pb-worker \
-      --link redis-master \
-      --link redis-sentinel \
-      -e POSTGRES_URL="postgresql://pybossa:supersecretpassword@db/pybossa" \
-      jvstein/pybossa \
-      python app_context_rqworker.py scheduled_jobs super high medium low email maintenance
-    ```
-
-0. Start the PyBossa frontend.
-    ```
-    docker run -d --name pybossa \
-      --link redis-master \
-      --link redis-sentinel \
-      -e POSTGRES_URL="postgresql://pybossa:supersecretpassword@db/pybossa" \
-      -p 8080:8080 \
-      jvstein/pybossa
-    ```
-
-## Run PostgreSQL in Docker
-I don't recommend running your database in Docker unless you've fully considered
-the consequences and know how to ensure your data is preserved. However, for
-*simple test purposes*, this is adequate.
-
-0. Start PostgreSQL in a container. Change `/tmp/postgres` to a more permanent
-   volume path if you need your data to persist across docker container
-   instances.
-    ```
-    docker run -d --name pybossa-db \
-        -e POSTGRES_USER=pybossa \
-        -e POSTGRES_PASSWORD=supersecretpassword \
-        -e PGDATA=/data/pgdata \
-        -v /tmp/postgres:/data \
-        postgres:9.6-alpine
-    ```
-
-0. Add `--link pybossa-db:db` to the `pb-worker` and `pybossa` startup commands.
-
-[db]: http://docs.pybossa.com/en/latest/install.html#configuring-the-databasest/install.html
+Is triggered when the code includes syntax errors. Check the docker-compose logs for the traceback. When there are no issues check if the pybossa background worker is running. Otherwise it could be the case that this container was started to early. It has to be started after the pybossa container is already running. In this case stop docker-compose and start it again.

@@ -1,0 +1,94 @@
+version: "3.8"
+
+volumes:
+    db-data:
+        driver: local
+
+services:
+    redis-master:
+        image: 'redis:6-alpine'
+        container_name: redis-master
+
+    redis-sentinel:
+        build: https://github.com/Informationsfabrik/docker-redis-sentinel.git
+        container_name: redis-sentinel
+        depends_on:
+            - redis-master
+        links:
+            - redis-master
+
+    postgres:
+        image: 'postgres:12-alpine'
+        environment:
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+        volumes:
+            - db-data:/var/lib/postgresql/data
+
+    # initializes the database
+    db-init:
+       build: .
+       depends_on:
+           - postgres
+       environment:
+           - POSTGRES_URL=${POSTGRES_URL}
+       links:
+           - postgres:db
+       command: sh -c "sleep 5 && python cli.py db_create"
+
+    # background worker process
+    pybossa-bgworker:
+        build: .
+        container_name: pybossa-bgworker
+        depends_on:
+          - pybossa
+        environment:
+            - POSTGRES_URL=${POSTGRES_URL}
+        links:
+            - redis-master
+            - redis-sentinel
+            - postgres:db
+        command: python app_context_rqworker.py scheduled_jobs super high medium low email maintenance
+
+    # background scheduler process
+    pybossa-scheduler:
+        build: .
+        container_name: pybossa-scheduler
+        environment:
+            - POSTGRES_URL=${POSTGRES_URL}
+        links:
+            - redis-master
+        command: rqscheduler --host redis-master
+
+    # web server
+    pybossa:
+        build: .
+        container_name: pybossa
+        environment:
+            - POSTGRES_URL=${POSTGRES_URL}
+        links:
+            - redis-master
+            - redis-sentinel
+            - postgres:db
+        ports:
+            - "80:8080"
+
+    # pgbackups:
+    #     image: prodrigestivill/postgres-backup-local
+    #     restart: always
+    #     user: postgres:postgres
+    #     volumes:
+    #         - /var/opt/pgbackups:/backup
+    #     links:
+    #         - postgres:db
+    #     environment:
+    #         - POSTGRES_HOST=postgres
+    #         - BACKUP_DIR=/home/username/backup .
+    #         - POSTGRES_DB=db
+    #         - POSTGRES_USER=${POSTGRES_USER}
+    #         - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    #         - SCHEDULE=@hourly
+    #         - BACKUP_KEEP_DAYS=7
+    #         - BACKUP_KEEP_WEEKS=4
+    #         - BACKUP_KEEP_MONTHS=6
+    #         - HEALTHCHECK_PORT=80

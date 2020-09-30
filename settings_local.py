@@ -15,36 +15,29 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with PyBossa.  If not, see <http://www.gnu.org/licenses/>.
-
-# DEBUG = False
+DEBUG = True
 
 ## webserver host and port
 HOST = '0.0.0.0'
+SERVER_NAME = 'localhost'
 PORT = 8080
 
-# TODO: set these to something else
-SECRET = 'foobar'
-SECRET_KEY = 'my-session-secret'
+SECRET = '{{SECRET}}'
+SECRET_KEY = '{{SECRET_KEY}}'
 
 SQLALCHEMY_DATABASE_URI = '{{POSTGRES_URL}}'
 
-##Slave configuration for DB
-#SQLALCHEMY_BINDS = {
-#    'slave': 'postgresql://user:password@server/db'
-#}
-
-# TODO: set this to something else
-ITSDANGEROUSKEY = 'its-dangerous-key'
+ITSDANGEROUSKEY = '{{ITSDANGEROUSKEY}}'
 
 ## project configuration
 BRAND = 'PyBossa'
 TITLE = 'PyBossa'
 LOGO = 'default_logo.svg'
-COPYRIGHT = 'Set Your Institution'
-DESCRIPTION = 'Set the description in your config'
+COPYRIGHT = 'PyBossa'
+DESCRIPTION = 'Your description'
 TERMSOFUSE = 'http://okfn.org/terms-of-use/'
 DATAUSE = 'http://opendatacommons.org/licenses/by/'
-CONTACT_EMAIL = 'info@pybossa.com'
+CONTACT_EMAIL = '{{DEFAULT_EMAIL}}'
 CONTACT_TWITTER = 'PyBossa'
 
 ## Default number of projects per page
@@ -61,15 +54,16 @@ CONTACT_TWITTER = 'PyBossa'
 ## Supported Languages
 ## NOTE: You need to create a symbolic link to the translations folder, otherwise
 ## this wont work.
-## ln -s pybossa/themes/your-theme/translations pybossa/translations
-#DEFAULT_LOCALE = 'en'
+# ln -s pybossa/themes/your-theme/translations pybossa/translations
+DEFAULT_LOCALE = 'en'
+LOCALES = [('en', 'English'), ('de', 'Deutsch')]
 #LOCALES = [('en', 'English'), ('es', u'Español'),
 #           ('it', 'Italiano'), ('fr', u'Français'),
 #           ('ja', u'日本語'),('pt_BR','Brazilian Portuguese')]
 
 
 ## list of administrator emails to which error emails get sent
-# ADMINS = ['me@sysadmin.org']
+ADMINS = ['{{DEFAULT_EMAIL}}']
 
 ## CKAN URL for API calls
 #CKAN_NAME = "Demo CKAN server"
@@ -80,18 +74,19 @@ CONTACT_TWITTER = 'PyBossa'
 # Sentry configuration
 # SENTRY_DSN=''
 ## set path to enable
-# LOG_FILE = '/path/to/log/file'
+LOG_FILE = '/opt/pybossa/logs.txt'
 ## Optional log level
-# import logging
-# LOG_LEVEL = logging.DEBUG
+import logging
+LOG_LEVEL = logging.DEBUG
 
 ## Mail setup
-#MAIL_SERVER = 'localhost'
-#MAIL_USERNAME = None
-#MAIL_PASSWORD = None
-#MAIL_PORT = 25
-#MAIL_FAIL_SILENTLY = True
-#MAIL_DEFAULT_SENDER = 'PyBossa Support <info@pybossa.com>'
+# MAIL_SERVER = 'localhost'
+# MAIL_USERNAME = '{{DEFAULT_EMAIL}}'
+# MAIL_PASSWORD =  '{{MAIL_PASSWORD}}'
+# MAIL_PORT = 587
+# MAIL_FAIL_SILENTLY = True
+# MAIL_DEFAULT_SENDER = 'PyBossa Support <info@pybossa.com>'
+# MAIL_USE_TLS = True
 
 ## Announcement messages
 ## Use any combination of the next type of messages: root, user, and app owners
@@ -111,6 +106,10 @@ REDIS_SENTINEL = [('{{REDIS_SENTINEL}}', 26379)]
 REDIS_MASTER = '{{REDIS_MASTER}}'
 REDIS_DB = 0
 REDIS_KEYPREFIX = 'pybossa_cache'
+REDIS_SOCKET_TIMEOUT = None
+REDIS_RETRY_ON_TIMEOUT = True
+REDIS_URL = 'redis://{{REDIS_MASTER}}:6379'
+REDIS_HOST = '{{REDIS_MASTER}}'
 
 ## Allowed upload extensions
 ALLOWED_EXTENSIONS = ['js', 'css', 'png', 'jpg', 'jpeg', 'gif', 'zip']
@@ -129,12 +128,7 @@ UPLOAD_FOLDER = 'uploads'
 ## Default shown presenters
 # PRESENTERS = ["basic", "image", "sound", "video", "map", "pdf"]
 # Default Google Docs spreadsheet template tasks URLs
-TEMPLATE_TASKS = {
-    'image': "https://docs.google.com/spreadsheet/ccc?key=0AsNlt0WgPAHwdHFEN29mZUF0czJWMUhIejF6dWZXdkE&usp=sharing",
-    'sound': "https://docs.google.com/spreadsheet/ccc?key=0AsNlt0WgPAHwdEczcWduOXRUb1JUc1VGMmJtc2xXaXc&usp=sharing",
-    'video': "https://docs.google.com/spreadsheet/ccc?key=0AsNlt0WgPAHwdGZ2UGhxSTJjQl9YNVhfUVhGRUdoRWc&usp=sharing",
-    'map': "https://docs.google.com/spreadsheet/ccc?key=0AsNlt0WgPAHwdGZnbjdwcnhKRVNlN1dGXy0tTnNWWXc&usp=sharing",
-    'pdf': "https://docs.google.com/spreadsheet/ccc?key=0AsNlt0WgPAHwdEVVamc0R0hrcjlGdXRaUXlqRXlJMEE&usp=sharing"}
+TEMPLATE_TASKS = {}
 
 # Expiration time for password protected project cookies
 PASSWD_COOKIE_TIMEOUT = 60 * 30
@@ -203,8 +197,22 @@ LIBSASS_STYLE = 'compressed'
 #                               }}
 
 # Email notifications for background jobs.
-# FAILED_JOBS_MAILS = 7
-# FAILED_JOBS_RETRIES = 3
+FAILED_JOBS_MAILS = 7
+FAILED_JOBS_RETRIES = 3
 
 # Language to use stems, full text search, etc. from postgresql.
 # FULLTEXTSEARCH_LANGUAGE = 'english'
+
+# A 32 char string for AES encryption of public IPs.
+CRYPTOPAN_KEY =  '{{CRYPTOPAN_KEY}}'
+
+# TTL for ZIP files of personal data
+TTL_ZIP_SEC_FILES = 3
+
+# Instruct PYBOSSA to generate HTTP or HTTPS 
+PREFERRED_URL_SCHEME='https'
+
+# Inactive users months to send email notification
+USER_INACTIVE_NOTIFICATION = 5
+# Inactive users months to delete users
+USER_INACTIVE_DELETE = 6

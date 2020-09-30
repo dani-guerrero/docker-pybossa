@@ -1,29 +1,33 @@
-FROM python:2.7-alpine
+FROM python:3.7
 
 ENV REDIS_SENTINEL=redis-sentinel
-ENV REDIS_MASTER=mymaster
+ENV REDIS_MASTER=redis-master
 
-# install git and various python library dependencies with alpine tools
 RUN set -x && \
-    apk --no-cache add postgresql-dev g++ gcc git jpeg-dev libffi-dev libjpeg libxml2-dev libxslt-dev linux-headers musl-dev openssl zlib zlib-dev
+    apt-get update && \
+    apt-get install -y apt-utils postgresql-client libpq-dev python-psycopg2 libsasl2-dev libldap2-dev libssl-dev
 
 # install python dependencies with pip
 # install pybossa from git
 # add unprivileged user for running the service
 ENV LIBRARY_PATH=/lib:/usr/lib
-RUN set -x && \
-    git clone --recursive https://github.com/Scifabric/pybossa /opt/pybossa && \
-    cd /opt/pybossa && \
-    pip install -U pip setuptools && \
-    pip install -r /opt/pybossa/requirements.txt && \
-    rm -rf /opt/pybossa/.git/ && \
-    addgroup pybossa  && \
-    adduser -D -G pybossa -s /bin/sh -h /opt/pybossa pybossa && \
-    passwd -u pybossa
+
+RUN set -x && git clone --recursive https://github.com/Scifabric/pybossa /opt/pybossa
+RUN set -x && cd /opt/pybossa && git checkout tags/v3.1.3
+RUN set -x && pip install -U pip setuptools
+RUN set -x && cd /opt/pybossa && pip install -r requirements.txt
+RUN set -x && pip install uwsgi
+RUN set -x && cd /opt/pybossa && rm -rf /opt/pybossa/.git/
+RUN set -x && addgroup pybossa
+RUN set -x && useradd -g pybossa -s /bin/sh -d /opt/pybossa pybossa
+RUN set -x && usermod -p pybossa pybossa
 
 # variables in these files are modified with sed from /entrypoint.sh
 ADD alembic.ini /opt/pybossa/
 ADD settings_local.py /opt/pybossa/
+ADD secrets.json /opt/pybossa/
+
+RUN ln -s /opt/pybossa/pybossa/themes/default/translations /opt/pybossa/pybossa/translations
 
 # TODO: we shouldn't need write permissions on the whole folder
 #   Known files written during runtime:
