@@ -54,6 +54,7 @@ CONTACT_TWITTER = 'PyBossa'
 ## Supported Languages
 ## NOTE: You need to create a symbolic link to the translations folder, otherwise
 ## this wont work.
+# @TODO move this command to dockerfiles
 # ln -s pybossa/themes/your-theme/translations pybossa/translations
 DEFAULT_LOCALE = 'en'
 LOCALES = [('en', 'English'), ('de', 'Deutsch')]
@@ -204,7 +205,9 @@ FAILED_JOBS_RETRIES = 3
 # FULLTEXTSEARCH_LANGUAGE = 'english'
 
 # A 32 char string for AES encryption of public IPs.
-CRYPTOPAN_KEY =  '{{CRYPTOPAN_KEY}}'
+#CRYPTOPAN_KEY =  '{{CRYPTOPAN_KEY}}'
+CRYPTOPAN_KEY = '32-char-str-for-AES-key-and-pad.'
+
 
 # TTL for ZIP files of personal data
 TTL_ZIP_SEC_FILES = 3
